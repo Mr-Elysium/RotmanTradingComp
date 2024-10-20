@@ -1,1 +1,1 @@
-print("algo trading")
+print("Algo trading")
