@@ -217,8 +217,7 @@ def main():
                 bid_prices, bid_sizes, ask_prices, ask_sizes = get_bid_ask_book(s, ticker, 3 * DEPTH)
                 bid_obs, ask_obs = calculate_obs(bid_sizes, ask_sizes, DEPTH)
                 spread = round(ask_prices[0] - bid_prices[0], 2)
-                duck_bid_id, duck_ask_id = 0, 0
-                owl_bid_id, owl_ask_id = 0, 0
+                bid_id, ask_id = 0, 0
                 adjusted_delta = -0.02 * (position / POSITION_LIMIT)
                 #buy_orders, sell_orders = get_open_orders(s, ticker)
                 #buy_order_prices = [order['price'] for order in buy_orders]
@@ -230,52 +229,42 @@ def main():
                 if spread >= MIN_SPREAD:
                     if abs(position) < INVENTORY_THRESHOLD_1:
                         #cancel_all_orders(s, ticker)
-                        if duck_bid_id > 0:
-                            if ticker == "DUCK":
-                                cancel_order(s, duck_bid_id)
-                                cancel_order(s, duck_ask_id)
-                        if owl_bid_id > 0:
-                            if ticker == "OWL":
-                                cancel_order(s, owl_bid_id)
-                                cancel_order(s, owl_ask_id)
-
-                        bid = min(bid_prices[0] + 0.01 + adjusted_delta, ask_prices[0] - 0.01)
-                        ask = max(ask_prices[0] - 0.01 + adjusted_delta, bid_prices[0] + 0.01)
+                        if bid_id > 0:
+                            cancel_order(s, bid_id)
+                            cancel_order(s, ask_id)
+                        bid = min(max(bid_prices[0] + 0.01 + adjusted_delta, bid_prices[0] + 0.01), ask_prices[0] - 0.01)
+                        ask = max(min(ask_prices[0] - 0.01 + adjusted_delta, ask_prices[0] - 0.01), bid_prices[0] + 0.01)
                         bid_order = place_order(s, ticker, 'LIMIT', ORDER_SIZE, bid, 'BUY')
                         ask_order = place_order(s, ticker, 'LIMIT', ORDER_SIZE, ask, 'SELL')
-
-                        if ticker == "DUCK":
-                            duck_bid_id, duck_ask_id = bid_order['order_id'], ask_order['order_id']
-                        if ticker == "OWL":
-                            owl_bid_id, owl_ask_id = bid_order['order_id'], ask_order['order_id']
+                        bid_id, ask_id = bid_order['order_id'], ask_order['order_id']
                 else:
                     #print("here")
                     if position < INVENTORY_THRESHOLD_2:
                         if bid_obs[1] < K and bid_obs[2] > K:
-                            bid = min(bid_prices[2] + 0.01 + adjusted_delta, ask_prices[0] - 0.01)
+                            bid = min(max(bid_prices[2] + 0.01 + adjusted_delta, bid_prices[2] + 0.01), ask_prices[0] - 0.01)
                             place_order(s, ticker, 'LIMIT', ORDER_SIZE, bid, 'BUY')
                         elif bid_obs[0] < K and bid_obs[1] > K:
-                            bid = min(bid_prices[1] + 0.01 + adjusted_delta, ask_prices[0] - 0.01)
+                            bid = min(max(bid_prices[1] + 0.01 + adjusted_delta, bid_prices[1] + 0.01), ask_prices[0] - 0.01)
                             place_order(s, ticker, 'LIMIT', ORDER_SIZE, bid, 'BUY')
                         elif bid_obs[0] > K:
-                            bid = min(bid_prices[0] + adjusted_delta, ask_prices[0] - 0.01)
+                            bid = min(max(bid_prices[0] + adjusted_delta, bid_prices[0]), ask_prices[0] - 0.01)
                             place_order(s, ticker, 'LIMIT', ORDER_SIZE, bid, 'BUY')
                     elif position > INVENTORY_THRESHOLD_3 and ask_obs[0] > K:
-                        ask = max(ask_prices[0] - 0.01 + adjusted_delta, bid_prices[0] + 0.01)
+                        ask = max(min(ask_prices[0] - 0.01 + adjusted_delta, ask_prices[0] - 0.01), bid_prices[0] + 0.01)
                         place_order(s, ticker, 'LIMIT', ORDER_SIZE, ask, 'SELL')
 
                     if position > INVENTORY_THRESHOLD_4:
                         if ask_obs[1] < K and ask_obs[2] > K:
-                            ask = max(ask_prices[2] - 0.01 + adjusted_delta, bid_prices[0] + 0.01)
+                            ask = max(min(ask_prices[2] - 0.01 + adjusted_delta, ask_prices[2] - 0.01), bid_prices[0] + 0.01)
                             place_order(s, ticker, 'LIMIT', ORDER_SIZE, ask, 'SELL')
                         elif ask_obs[0] < K and ask_obs[1] > K:
-                            ask = max(ask_prices[1] - 0.01 + adjusted_delta, bid_prices[0] + 0.01)
+                            ask = max(min(ask_prices[1] - 0.01 + adjusted_delta, ask_prices[1] - 0.01), bid_prices[0] + 0.01)
                             place_order(s, ticker, 'LIMIT', ORDER_SIZE, ask, 'SELL')
                         elif ask_obs[0] > K:
-                            ask = max(ask_prices[0] + adjusted_delta, bid_prices[0] + 0.01)
+                            ask = max(min(ask_prices[0] + adjusted_delta, ask_prices[0]), bid_prices[0] + 0.01)
                             place_order(s, ticker, 'LIMIT', ORDER_SIZE, ask, 'SELL')
                     elif position < INVENTORY_THRESHOLD_5 and bid_obs[0] > K:
-                        bid = min(bid_prices[0] + 0.01 + adjusted_delta, ask_prices[0] - 0.01)
+                        bid = min(max(bid_prices[0] + 0.01 + adjusted_delta, bid_prices[0] + 0.01), ask_prices[0] - 0.01)
                         place_order(s, ticker, 'LIMIT', ORDER_SIZE, bid, 'BUY')
                     #time.sleep(0.1)
 
